@@ -26,10 +26,10 @@ jobs:
       - name: Checkout código
         uses: actions/checkout@v4
 
-      - name: Simular tests fallidos
+      - name: Simular tests 
         run: |
           echo "Ejecutando tests..."
-          exit 1
+          
 
   deploy:
     name: Deploy
