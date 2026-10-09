@@ -1,73 +1,7 @@
-name: Pipeline DevOps
+Build Docker
+→ Trivy
+→ SonarCloud
+→ Docker Hub
 
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-  workflow_dispatch:
 
-jobs:
-  build:
-    name: Build imagen Docker
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout código
-        uses: actions/checkout@v4
 
-      - name: Build imagen
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: false
-          tags: lab-github-actions:${{ github.sha }}
-
-  scan:
-    name: Scan de seguridad (Trivy)
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Checkout código
-        uses: actions/checkout@v4
-
-      - name: Build imagen para escaneo
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: false
-          load: true
-          tags: lab-github-actions:${{ github.sha }}
-
-      - name: Escaneo Trivy
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: lab-github-actions:${{ github.sha }}
-          format: table
-          exit-code: '1'
-          ignore-unfixed: true
-          vuln-type: 'os,library'
-          severity: 'CRITICAL,HIGH'
-
-  push-artifact:
-    name: Push a Docker Hub
-    runs-on: ubuntu-latest
-    needs: scan
-    if: github.event_name != 'pull_request'
-    steps:
-      - name: Checkout código
-        uses: actions/checkout@v4
-
-      - name: Login a Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Build y push imagen
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/lab-github-actions:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/lab-github-actions:${{ github.sha }}
